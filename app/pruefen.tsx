@@ -2,26 +2,46 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
+  alleGlaeubiger,
   dokument as ladeDokument,
   findeOderLegeGlaeubigerAn,
+  forderung as ladeForderung,
   speichereForderung,
   verknuepfeDokument,
 } from '../src/db/repo';
 import { LEERE_BETRAEGE, formatEuro, parseEuroZuCent, summe } from '../src/domain/betraege';
 import type { Extraktion } from '../src/services/claude';
+import type { Cent, Forderungstyp } from '../src/domain/types';
 import { Feld, Schalter } from '../src/ui/components/Feld';
 import { abstand, radius, schrift, useFarben } from '../src/ui/theme';
+
+/** Cent zurück in eine tippbare Eingabe. Null bleibt leer statt "0,00". */
+function centZuEingabe(cent: Cent): string {
+  if (!cent) return '';
+  return (cent / 100).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
 
 /**
  * Nichts aus der automatischen Auswertung wird ungeprüft gespeichert. Diese Ansicht
  * zeigt jeden extrahierten Wert einzeln und editierbar; unsichere Felder sind markiert.
  * Erst dein Bestätigen legt die Forderung an.
+ *
+ * Dieselbe Maske dient zum Nachbearbeiten: mit `forderungId` statt `dokumentId`
+ * werden die gespeicherten Werte geladen und beim Sichern überschrieben. Die
+ * automatische Auswertung liest Beträge und Daten nicht immer aus jedem Brief —
+ * ohne diesen Weg bliebe eine Forderung für immer unvollständig.
  */
 export default function PruefenScreen() {
   const farben = useFarben();
-  const { dokumentId } = useLocalSearchParams<{ dokumentId: string }>();
+  const { dokumentId, forderungId } = useLocalSearchParams<{
+    dokumentId?: string;
+    forderungId?: string;
+  }>();
+  const bearbeitet = Boolean(forderungId);
 
   const [extraktion, setExtraktion] = useState<Extraktion | null>(null);
+  const [geladen, setGeladen] = useState(false);
+  const [typ, setTyp] = useState<Forderungstyp>('sonstige');
   const [fehler, setFehler] = useState<string | null>(null);
   const [speichert, setSpeichert] = useState(false);
 
@@ -45,18 +65,56 @@ export default function PruefenScreen() {
   const [gefordertGesamt, setGefordertGesamt] = useState('');
 
   useEffect(() => {
+    // Weg 1: bestehende Forderung nachbearbeiten.
+    if (forderungId) {
+      const id = Number(forderungId);
+      void (async () => {
+        const [f, glaeubigerListe] = await Promise.all([ladeForderung(id), alleGlaeubiger()]);
+        if (!f) {
+          setFehler('Diese Forderung gibt es nicht mehr.');
+          setGeladen(true);
+          return;
+        }
+        const g = glaeubigerListe.find((x) => x.id === f.glaeubigerId);
+        setTyp(f.typ);
+        setGlaeubiger(g?.name ?? '');
+        setVertrittFuer(g?.vertrittFuer ?? '');
+        setIstInkasso(g?.istInkasso ?? false);
+        setTitel(f.titel);
+        setAktenzeichen(f.aktenzeichen ?? '');
+        setEntstandenAm(f.entstandenAm ?? '');
+        setFaelligAm(f.faelligAm ?? '');
+        setFristBis(f.fristBis ?? '');
+        setIstTituliert(f.istTituliert);
+        setHauptforderung(centZuEingabe(f.betraege.hauptforderung));
+        setZinsen(centZuEingabe(f.betraege.zinsen));
+        setMahnkosten(centZuEingabe(f.betraege.mahnkosten));
+        setInkassokosten(centZuEingabe(f.betraege.inkassokosten));
+        setGerichtskosten(centZuEingabe(f.betraege.gerichtskosten));
+        setSaeumniszuschlaege(centZuEingabe(f.betraege.saeumniszuschlaege));
+        setSonstigeKosten(centZuEingabe(f.betraege.sonstigeKosten));
+        setGefordertGesamt(f.betraege.gefordertGesamt ? centZuEingabe(f.betraege.gefordertGesamt) : '');
+        setGeladen(true);
+      })();
+      return;
+    }
+
+    // Weg 2: frisch gescannten Beleg prüfen.
     const id = Number(dokumentId);
     if (!Number.isFinite(id)) {
       setFehler('Kein Beleg angegeben.');
+      setGeladen(true);
       return;
     }
     void ladeDokument(id).then((dok) => {
       if (!dok?.extraktionJson) {
         setFehler('Zu diesem Beleg liegt keine Auswertung vor.');
+        setGeladen(true);
         return;
       }
       const e = JSON.parse(dok.extraktionJson) as Extraktion;
       setExtraktion(e);
+      setTyp(e.forderungstyp);
       setGlaeubiger(e.glaeubigerName ?? '');
       setVertrittFuer(e.glaeubigerVertrittFuer ?? '');
       setIstInkasso(e.glaeubigerIstInkasso);
@@ -74,8 +132,9 @@ export default function PruefenScreen() {
       setSaeumniszuschlaege(e.saeumniszuschlaege ?? '');
       setSonstigeKosten(e.sonstigeKosten ?? '');
       setGefordertGesamt(e.gefordertGesamt ?? '');
+      setGeladen(true);
     });
-  }, [dokumentId]);
+  }, [dokumentId, forderungId]);
 
   function unsicher(feld: string): boolean {
     return extraktion?.unsichereFelder.includes(feld) ?? false;
@@ -97,8 +156,19 @@ export default function PruefenScreen() {
   const differenz =
     betraege.gefordertGesamt !== null ? betraege.gefordertGesamt - berechneteSumme : null;
 
+  const luecken: string[] = [];
+  if (berechneteSumme === 0) {
+    luecken.push(
+      'Es ist kein Betrag erfasst. Ohne Betrag taucht die Forderung mit 0,00 € in der Übersicht auf und wird bei der Priorisierung falsch eingeordnet.'
+    );
+  }
+  if (!entstandenAm.trim() && !faelligAm.trim()) {
+    luecken.push(
+      'Es fehlt das Entstehungs- oder Fälligkeitsdatum. Ohne eines von beiden kann die Verjährung nicht gerechnet werden — und die ist bei alten Forderungen dein stärkster Hebel.'
+    );
+  }
+
   async function uebernehmen() {
-    if (!extraktion) return;
     if (!glaeubiger.trim()) {
       setFehler('Ohne Gläubiger lässt sich die Forderung nicht zuordnen. Trage den Absender ein.');
       return;
@@ -108,32 +178,37 @@ export default function PruefenScreen() {
     try {
       const glaeubigerId = await findeOderLegeGlaeubigerAn(glaeubiger, {
         vertrittFuer: vertrittFuer.trim() || null,
-        adresse: extraktion.glaeubigerAdresse,
+        adresse: extraktion?.glaeubigerAdresse ?? null,
         istInkasso,
       });
 
-      const forderungId = await speichereForderung({
-        glaeubigerId,
-        titel: titel.trim() || 'Forderung',
-        typ: extraktion.forderungstyp,
-        status: 'offen',
-        betraege,
-        aktenzeichen: aktenzeichen.trim() || null,
-        entstandenAm: entstandenAm.trim() || null,
-        faelligAm: faelligAm.trim() || null,
-        fristBis: fristBis.trim() || null,
-        istTituliert,
-        tituliertAm: istTituliert ? (extraktion.briefdatum ?? null) : null,
-        verjaehrungNeubeginnAm: null,
-        verjaehrungGehemmtSeit: null,
-        vorsatzVorgeworfen: false,
-        notizen: null,
-      });
+      const gespeicherteId = await speichereForderung(
+        {
+          glaeubigerId,
+          titel: titel.trim() || 'Forderung',
+          typ,
+          status: 'offen',
+          betraege,
+          aktenzeichen: aktenzeichen.trim() || null,
+          entstandenAm: entstandenAm.trim() || null,
+          faelligAm: faelligAm.trim() || null,
+          fristBis: fristBis.trim() || null,
+          istTituliert,
+          tituliertAm: istTituliert ? (extraktion?.briefdatum ?? null) : null,
+          verjaehrungNeubeginnAm: null,
+          verjaehrungGehemmtSeit: null,
+          vorsatzVorgeworfen: false,
+          notizen: null,
+        },
+        forderungId ? Number(forderungId) : undefined
+      );
 
-      await verknuepfeDokument(Number(dokumentId), forderungId);
+      if (dokumentId) {
+        await verknuepfeDokument(Number(dokumentId), gespeicherteId);
+      }
 
       // Zurück in die Übersicht statt in den Scan-Tab: Wer gerade eine Forderung
-      // erfasst hat, will sehen, wo sie einsortiert wurde und was jetzt zu tun ist.
+      // erfasst oder korrigiert hat, will sehen, was jetzt zu tun ist.
       router.replace('/');
     } catch (e) {
       setFehler(e instanceof Error ? e.message : String(e));
@@ -142,7 +217,7 @@ export default function PruefenScreen() {
     }
   }
 
-  if (fehler && !extraktion) {
+  if (fehler && !geladen) {
     return (
       <View style={[stil.mitte, { backgroundColor: farben.hintergrund }]}>
         <Text style={[schrift.standard, { color: farben.text, textAlign: 'center' }]}>{fehler}</Text>
@@ -150,7 +225,7 @@ export default function PruefenScreen() {
     );
   }
 
-  if (!extraktion) {
+  if (!geladen) {
     return (
       <View style={[stil.mitte, { backgroundColor: farben.hintergrund }]}>
         <ActivityIndicator color={farben.akzent} />
@@ -164,7 +239,7 @@ export default function PruefenScreen() {
       contentContainerStyle={stil.inhalt}
       keyboardShouldPersistTaps="handled"
     >
-      {extraktion.auffaelligkeiten.length > 0 && (
+      {extraktion && extraktion.auffaelligkeiten.length > 0 && (
         <View style={[stil.karte, { backgroundColor: farben.flaeche, borderColor: farben.hoch }]}>
           <Text style={[schrift.betont, { color: farben.hoch }]}>Aufgefallen beim Lesen</Text>
           {extraktion.auffaelligkeiten.map((a) => (
@@ -172,6 +247,24 @@ export default function PruefenScreen() {
               {a}
             </Text>
           ))}
+        </View>
+      )}
+
+      {/* Ohne Betrag und ohne Entstehungsdatum ist die Forderung zwar speicherbar,
+          aber die App kann dann weder priorisieren noch die Verjährung rechnen.
+          Deshalb steht die Lücke oben und nicht als stiller Nullwert im Formular. */}
+      {(luecken.length > 0) && (
+        <View style={[stil.karte, { backgroundColor: farben.flaeche, borderColor: farben.hoch }]}>
+          <Text style={[schrift.betont, { color: farben.hoch }]}>Das fehlt noch</Text>
+          {luecken.map((l) => (
+            <Text key={l} style={[schrift.klein, { color: farben.text, marginTop: abstand.s, lineHeight: 20 }]}>
+              {l}
+            </Text>
+          ))}
+          <Text style={[schrift.klein, { color: farben.textGedaempft, marginTop: abstand.m, lineHeight: 20 }]}>
+            Beides steht meist im Brief. Wenn die Texterkennung es überlesen hat, trag es unten von
+            Hand nach — du kannst das auch später jederzeit über „Bearbeiten" tun.
+          </Text>
         </View>
       )}
 

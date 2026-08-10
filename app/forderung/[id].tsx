@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { alleGlaeubiger, dokumenteZuForderung, forderung as ladeForderung } from '../../src/db/repo';
 import { berechneVerjaehrung, type Verjaehrungsergebnis } from '../../src/domain/verjaehrung';
 import { berechnePrioritaet, type Prioritaet } from '../../src/domain/prioritaet';
@@ -118,6 +118,20 @@ export default function ForderungDetail() {
         </Text>
       </View>
 
+      {/* Die automatische Auswertung liest nicht aus jedem Brief alles heraus.
+          Ohne diesen Weg bliebe eine unvollständige Forderung für immer falsch. */}
+      <Pressable
+        onPress={() =>
+          router.push({ pathname: '/pruefen', params: { forderungId: String(forderung.id) } })
+        }
+        style={({ pressed }) => [
+          stil.bearbeiten,
+          { borderColor: farben.rand, backgroundColor: farben.flaeche, opacity: pressed ? 0.7 : 1 },
+        ]}
+      >
+        <Text style={[schrift.betont, { color: farben.akzent }]}>Angaben bearbeiten</Text>
+      </Pressable>
+
       <Abschnitt titel="Nächster Schritt">
         <Text style={[schrift.standard, { color: farben.text, lineHeight: 24 }]}>
           {prioritaet.naechsterSchritt}
@@ -208,6 +222,12 @@ const stil = StyleSheet.create({
   inhalt: { padding: abstand.l, paddingBottom: abstand.xxl, gap: abstand.m },
   mitte: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   karte: { padding: abstand.l, borderRadius: radius.l, borderWidth: StyleSheet.hairlineWidth },
+  bearbeiten: {
+    paddingVertical: abstand.m,
+    borderRadius: radius.m,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: 'center',
+  },
   postenZeile: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: abstand.xs },
   summeZeile: { borderTopWidth: StyleSheet.hairlineWidth, marginTop: abstand.s, paddingTop: abstand.s },
 });
