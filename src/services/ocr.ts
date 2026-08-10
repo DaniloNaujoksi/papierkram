@@ -5,7 +5,29 @@
  * nicht zwischengespeichert und verlässt die App nicht — hier entsteht nur Text.
  */
 
-import TextRecognition from '@react-native-ml-kit/text-recognition';
+/**
+ * Wie beim Scanner wird das Modul erst beim Benutzen geladen. In Expo Go fehlt es,
+ * und die App soll dort trotzdem starten.
+ */
+let modul: { recognize: (pfad: string) => Promise<{ text?: string; blocks?: unknown[] }> } | null = null;
+let geladen = false;
+
+function ladeModul() {
+  if (geladen) return modul;
+  geladen = true;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const m = require('@react-native-ml-kit/text-recognition');
+    modul = m.default ?? m;
+  } catch {
+    modul = null;
+  }
+  return modul;
+}
+
+export function ocrVerfuegbar(): boolean {
+  return ladeModul() !== null;
+}
 
 export interface OcrErgebnis {
   text: string;
@@ -19,7 +41,11 @@ export interface OcrErgebnis {
  * @param bildPfad Lokaler Dateipfad ("file:///...") aus dem Dokumentenscanner.
  */
 export async function erkenneText(bildPfad: string): Promise<OcrErgebnis> {
-  const ergebnis = await TextRecognition.recognize(bildPfad);
+  const m = ladeModul();
+  if (!m) {
+    throw new Error('Die Texterkennung ist in dieser Version nicht enthalten.');
+  }
+  const ergebnis = await m.recognize(bildPfad);
 
   const text = ergebnis.text ?? '';
   const bloecke = ergebnis.blocks?.length ?? 0;
