@@ -46,14 +46,14 @@ function Kopf({ gesamtOffen, gesamtNebenkosten, anzahl, dringend, verjaehrt }: {
   return (
     <View style={{ gap: abstand.s }}>
       <View style={[stil.kopf, { backgroundColor: farben.flaeche, borderColor: farben.rand }]}>
-        <Text style={[schrift.winzig, { color: farben.akzent }]}>OFFEN INSGESAMT</Text>
+        <Text style={[schrift.winzig, { color: farben.akzent }]}>WAS OFFEN IST</Text>
         <Text style={[schrift.titel, { color: farben.text, marginTop: abstand.s }]}>
           {formatEuro(gesamtOffen)}
         </Text>
         {gesamtNebenkosten > 0 && (
           <Text style={[schrift.klein, { color: farben.textGedaempft, marginTop: abstand.s }]}>
-            Davon {formatEuro(gesamtNebenkosten)} Zinsen und aufgeschlagene Kosten — genau der Teil,
-            über den sich verhandeln lässt.
+            Davon {formatEuro(gesamtNebenkosten)} Zinsen und Aufschläge. Das ist der Teil, der
+            verhandelbar ist — und der, bei dem sich Nachrechnen am ehesten lohnt.
           </Text>
         )}
       </View>
@@ -137,10 +137,10 @@ function Leer() {
   return (
     <View style={stil.leer}>
       <Text style={[schrift.titel, { color: farben.text, textAlign: 'center' }]}>
-        Noch nichts{'\n'}erfasst
+        Stapel{'\n'}noch zu
       </Text>
       <View style={[stil.leerStreifen, { backgroundColor: farben.akzent }]}>
-        <Text style={[schrift.betont, { color: farben.akzentText }]}>Fang mit dem schlimmsten an</Text>
+        <Text style={[schrift.betont, { color: farben.akzentText }]}>Fang mit dem Schlimmsten an</Text>
       </View>
       <Text
         style={[
@@ -148,8 +148,9 @@ function Leer() {
           { color: farben.textGedaempft, textAlign: 'center', marginTop: abstand.m, lineHeight: 24 },
         ]}
       >
-        Nimm den Brief, vor dem dir am meisten graut. Sobald er erfasst ist, siehst du schwarz auf
-        weiß, worum es geht — das ist fast immer weniger schlimm als der Stapel.
+        Der Stapel ist immer schlimmer als die Zahlen darin. Das ist keine Vertröstung, sondern
+        Rechnerei: Fast jeder schätzt die Summe zu hoch, bevor er sie ausrechnet. Nimm den Brief,
+        vor dem dir am meisten graut.
       </Text>
     </View>
   );

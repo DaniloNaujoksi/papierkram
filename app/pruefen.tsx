@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
   alleGlaeubiger,
@@ -13,6 +13,7 @@ import { LEERE_BETRAEGE, formatEuro, parseEuroZuCent, summe } from '../src/domai
 import type { Extraktion } from '../src/services/claude';
 import type { Cent, Forderungstyp } from '../src/domain/types';
 import { Feld, Schalter } from '../src/ui/components/Feld';
+import { Knopf } from '../src/ui/components/Knopf';
 import { abstand, radius, schrift, useFarben } from '../src/ui/theme';
 
 /** Cent zurück in eine tippbare Eingabe. Null bleibt leer statt "0,00". */
@@ -395,18 +396,12 @@ export default function PruefenScreen() {
         <Text style={[schrift.klein, { color: farben.sofort, lineHeight: 20 }]}>{fehler}</Text>
       )}
 
-      <Pressable
+      <Knopf
+        titel={speichert ? 'Wird gespeichert…' : bearbeitet ? 'Änderungen sichern' : 'Forderung übernehmen'}
         onPress={() => void uebernehmen()}
-        disabled={speichert}
-        style={({ pressed }) => [
-          stil.knopf,
-          { backgroundColor: farben.akzent, opacity: pressed || speichert ? 0.7 : 1 },
-        ]}
-      >
-        <Text style={[schrift.betont, { color: farben.akzentText }]}>
-          {speichert ? 'Wird gespeichert…' : 'Forderung übernehmen'}
-        </Text>
-      </Pressable>
+        deaktiviert={speichert}
+        style={{ marginTop: abstand.m }}
+      />
     </ScrollView>
   );
 }
@@ -421,10 +416,4 @@ const stil = StyleSheet.create({
     marginVertical: abstand.s,
   },
   summenZeile: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  knopf: {
-    paddingVertical: abstand.l,
-    borderRadius: radius.m,
-    alignItems: 'center',
-    marginTop: abstand.m,
-  },
 });

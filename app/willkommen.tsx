@@ -10,7 +10,7 @@ const SCHRITTE: Array<{ nummer: string; titel: string; text: string }> = [
   {
     nummer: '01',
     titel: 'Scannen',
-    text: 'Brief abfotografieren. Der Text wird auf dem Gerät erkannt — das Foto verlässt dein iPhone nie.',
+    text: 'Brief abfotografieren. Der Text wird auf dem Gerät gelesen — das Foto verlässt dein iPhone nie.',
   },
   {
     nummer: '02',
@@ -20,7 +20,7 @@ const SCHRITTE: Array<{ nummer: string; titel: string; text: string }> = [
   {
     nummer: '03',
     titel: 'Priorisieren',
-    text: 'Sortiert nach Schadenspotenzial, nicht nach Tonfall. Der lauteste Brief ist selten der gefährlichste.',
+    text: 'Sortiert nach Schadenspotenzial, nicht nach Lautstärke. Inkassobüros schreiben in Großbuchstaben und können wenig. Das Amtsgericht schreibt höflich.',
   },
   {
     nummer: '04',
@@ -51,9 +51,9 @@ export default function WillkommenScreen() {
       </View>
 
       <Text style={[schrift.standard, { color: farben.textGedaempft, lineHeight: 24 }]}>
-        Ein Stapel Briefe wirkt immer schlimmer als die Zahlen darin. Diese App macht aus dem
-        Stapel eine Liste, aus der Liste eine Reihenfolge und aus der Reihenfolge den jeweils
-        nächsten Schritt.
+        Briefe werden nicht schlimmer, wenn man sie aufmacht. Nur der Stapel wird höher, wenn man
+        es lässt. Diese App macht aus dem Stapel eine Liste, aus der Liste eine Reihenfolge — und
+        aus der Reihenfolge den einen Schritt, der als Nächstes dran ist.
       </Text>
 
       <View style={stil.schritte}>

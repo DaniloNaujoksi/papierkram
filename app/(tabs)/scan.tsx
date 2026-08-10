@@ -2,7 +2,6 @@ import { useState } from 'react';
 import {
   ActivityIndicator,
   Image,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,6 +10,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { Directory, File, Paths } from 'expo-file-system';
+import { Knopf } from '../../src/ui/components/Knopf';
 import { bereinigeOcrText, erkenneText, ocrVerfuegbar } from '../../src/services/ocr';
 import { scanneSeite, scannerVerfuegbar } from '../../src/services/scanner';
 import { anonymisiere, type AnonymisierungsErgebnis } from '../../src/services/anonymizer';
@@ -151,19 +151,22 @@ export default function ScanScreen() {
         <>
           {kameraMoeglich ? (
             <View style={[stil.karte, { backgroundColor: farben.flaeche, borderColor: farben.rand }]}>
-              <Text style={[schrift.ueberschrift, { color: farben.text }]}>Brief abfotografieren</Text>
+              <Text style={[schrift.winzig, { color: farben.akzent }]}>BRIEF AUFMACHEN</Text>
+              <Text style={[schrift.ueberschrift, { color: farben.text, marginTop: abstand.s }]}>
+                Er kann dich nicht beißen
+              </Text>
               <Text style={[schrift.standard, { color: farben.textGedaempft, marginTop: abstand.s, lineHeight: 23 }]}>
-                Der Scanner schneidet das Blatt automatisch frei. Leg den Brief flach hin, sorg für
-                gleichmäßiges Licht und halte das Handy parallel über die Seite.
+                Flach hinlegen, Licht drauf, Handy parallel drüber. Den Rest macht der Scanner —
+                er schneidet das Blatt selbst frei.
               </Text>
               <Text style={[schrift.klein, { color: farben.textGedaempft, marginTop: abstand.m, lineHeight: 20 }]}>
-                Die Aufnahme bleibt auf diesem Gerät. Erkannt wird der Text hier auf dem iPhone;
-                zur Auswertung geht nur der anonymisierte Text hinaus, den du vorher zu sehen bekommst.
+                Das Foto bleibt hier. Der Text wird auf dem iPhone erkannt, und was zur Auswertung
+                rausgeht, liest du vorher Wort für Wort.
               </Text>
             </View>
           ) : (
             <View style={[stil.karte, { backgroundColor: farben.flaecheGedaempft, borderColor: farben.rand }]}>
-              <Text style={[schrift.betont, { color: farben.text }]}>Kamera-Erfassung nicht verfügbar</Text>
+              <Text style={[schrift.betont, { color: farben.text }]}>Kamera streikt hier</Text>
               <Text style={[schrift.klein, { color: farben.textGedaempft, marginTop: abstand.s, lineHeight: 21 }]}>
                 Scanner und Texterkennung sind native Bestandteile, die es in Expo Go nicht gibt.
                 Sie funktionieren erst in der installierten App. Bis dahin kannst du den Brieftext
@@ -172,14 +175,7 @@ export default function ScanScreen() {
             </View>
           )}
 
-          {kameraMoeglich && (
-            <Pressable
-              onPress={() => void scannen()}
-              style={({ pressed }) => [stil.knopf, { backgroundColor: farben.akzent, opacity: pressed ? 0.8 : 1 }]}
-            >
-              <Text style={[schrift.betont, { color: farben.akzentText }]}>Scanner öffnen</Text>
-            </Pressable>
-          )}
+          {kameraMoeglich && <Knopf titel="Brief scannen" onPress={() => void scannen()} />}
 
           <Text style={[schrift.winzig, { color: farben.textGedaempft, textTransform: 'uppercase', marginTop: abstand.m }]}>
             {kameraMoeglich ? 'Oder Text einfügen' : 'Brieftext'}
@@ -198,24 +194,11 @@ export default function ScanScreen() {
 
           {fehler && <Text style={[schrift.klein, { color: farben.sofort, lineHeight: 20 }]}>{fehler}</Text>}
 
-          <Pressable
+          <Knopf
+            titel="Text übernehmen"
+            art={kameraMoeglich ? 'tertiaer' : 'primaer'}
             onPress={() => void textUebernehmen()}
-            style={({ pressed }) => [
-              stil.knopf,
-              kameraMoeglich
-                ? { backgroundColor: farben.flaecheGedaempft, opacity: pressed ? 0.8 : 1 }
-                : { backgroundColor: farben.akzent, opacity: pressed ? 0.8 : 1 },
-            ]}
-          >
-            <Text
-              style={[
-                schrift.betont,
-                { color: kameraMoeglich ? farben.text : farben.akzentText },
-              ]}
-            >
-              Text übernehmen
-            </Text>
-          </Pressable>
+          />
         </>
       )}
 
@@ -231,7 +214,7 @@ export default function ScanScreen() {
         <View style={stil.laden}>
           <ActivityIndicator color={farben.akzent} />
           <Text style={[schrift.klein, { color: farben.textGedaempft, marginTop: abstand.s }]}>
-            Text wird auf dem Gerät erkannt…
+            Buchstaben werden sortiert…
           </Text>
         </View>
       )}
@@ -256,7 +239,7 @@ export default function ScanScreen() {
           )}
 
           <View style={[stil.karte, { backgroundColor: farben.flaeche, borderColor: farben.rand }]}>
-            <Text style={[schrift.betont, { color: farben.text }]}>Das geht hinaus</Text>
+            <Text style={[schrift.winzig, { color: farben.akzent }]}>DAS UND SONST NICHTS</Text>
             {anonym.ersetzungen.length > 0 ? (
               <Text style={[schrift.klein, { color: farben.textGedaempft, marginTop: abstand.xs }]}>
                 Entfernt: {anonym.ersetzungen.map((e) => `${e.kategorie} (${e.anzahl}×)`).join(', ')}
@@ -282,16 +265,8 @@ export default function ScanScreen() {
             </View>
           )}
 
-          <Pressable
-            onPress={() => void auswerten()}
-            style={({ pressed }) => [stil.knopf, { backgroundColor: farben.akzent, opacity: pressed ? 0.8 : 1 }]}
-          >
-            <Text style={[schrift.betont, { color: farben.akzentText }]}>Auswerten</Text>
-          </Pressable>
-
-          <Pressable onPress={zuruecksetzen} style={stil.knopfFlach}>
-            <Text style={[schrift.standard, { color: farben.textGedaempft }]}>Verwerfen und neu anfangen</Text>
-          </Pressable>
+          <Knopf titel="Auswerten" onPress={() => void auswerten()} />
+          <Knopf titel="Nochmal von vorn" art="tertiaer" onPress={zuruecksetzen} />
         </>
       )}
 
@@ -299,7 +274,7 @@ export default function ScanScreen() {
         <View style={stil.laden}>
           <ActivityIndicator color={farben.akzent} />
           <Text style={[schrift.klein, { color: farben.textGedaempft, marginTop: abstand.s }]}>
-            Brief wird ausgewertet…
+            Wird gelesen. Geht schneller als Aufschieben.
           </Text>
         </View>
       )}
@@ -334,6 +309,4 @@ const stil = StyleSheet.create({
     lineHeight: 19,
   },
   laden: { alignItems: 'center', paddingVertical: abstand.xl },
-  knopf: { paddingVertical: abstand.l, borderRadius: radius.m, alignItems: 'center' },
-  knopfFlach: { paddingVertical: abstand.m, alignItems: 'center' },
 });

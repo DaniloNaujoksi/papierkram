@@ -1,10 +1,11 @@
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { LEERE_PERSOENLICHE_DATEN, type PersoenlicheDaten } from '../../src/services/anonymizer';
 import { lesePersoenlicheDaten, speicherePersoenlicheDaten } from '../../src/services/persoenlicheDaten';
 import { leseApiKey, speichereApiKey } from '../../src/services/claude';
 import { Feld } from '../../src/ui/components/Feld';
+import { Knopf } from '../../src/ui/components/Knopf';
 import { abstand, radius, schrift, useFarben } from '../../src/ui/theme';
 
 export default function EinstellungenScreen() {
@@ -93,14 +94,11 @@ export default function EinstellungenScreen() {
         hinweis="Versichertennummer, Steuer-ID, Rentenversicherungsnummer, Kundennummern — mit Komma getrennt."
       />
 
-      <Pressable
+      <Knopf
+        titel={gespeichert ? 'Gespeichert' : 'Speichern'}
         onPress={() => void speichern()}
-        style={({ pressed }) => [stil.knopf, { backgroundColor: farben.akzent, opacity: pressed ? 0.8 : 1 }]}
-      >
-        <Text style={[schrift.betont, { color: farben.akzentText }]}>
-          {gespeichert ? 'Gespeichert' : 'Speichern'}
-        </Text>
-      </Pressable>
+        style={{ marginTop: abstand.m }}
+      />
     </ScrollView>
   );
 }
@@ -113,5 +111,4 @@ const stil = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     marginBottom: abstand.s,
   },
-  knopf: { paddingVertical: abstand.l, borderRadius: radius.m, alignItems: 'center', marginTop: abstand.m },
 });
