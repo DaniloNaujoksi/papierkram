@@ -1,10 +1,15 @@
-import { useColorScheme } from 'react-native';
-
 /**
- * Ruhiges, sachliches Farbschema. Bewusst kein Alarmrot als Grundton:
- * Wer die App öffnet, hat mit dem Thema ohnehin genug Stress. Farbe markiert
- * hier Dringlichkeit, nicht Stimmung.
+ * Gestaltung nach dem Papierkram-Unfucker-Design.
+ *
+ * Bewusst nur dunkel: Der Entwurf lebt vom schwarzen Grund, auf dem das Neongrün
+ * trägt. Auf hellem Untergrund verliert es seine Wirkung und wird auf einem Handy
+ * in der Sonne sogar schlechter lesbar.
+ *
+ * Die Farbrollen sind streng verteilt: Grün heißt "hier geht es weiter", Magenta
+ * heißt "hier brennt es". Beides niemals dekorativ einsetzen — sonst stumpft die
+ * Warnfarbe ab, und genau die muss in dieser App zuverlässig funktionieren.
  */
+
 export interface Farben {
   hintergrund: string;
   flaeche: string;
@@ -14,6 +19,8 @@ export interface Farben {
   textGedaempft: string;
   akzent: string;
   akzentText: string;
+  signal: string;
+
   sofort: string;
   hoch: string;
   mittel: string;
@@ -21,64 +28,56 @@ export interface Farben {
   nichtZahlen: string;
 }
 
-const hell: Farben = {
-  hintergrund: '#F7F6F3',
-  flaeche: '#FFFFFF',
-  flaecheGedaempft: '#EFEDE8',
-  rand: '#E0DDD6',
-  text: '#1C1B19',
-  textGedaempft: '#6B6862',
-  akzent: '#2E5E4E',
-  akzentText: '#FFFFFF',
-
-  sofort: '#A33A2B',
-  hoch: '#B5722A',
-  mittel: '#6B6862',
-  niedrig: '#8A867E',
-  nichtZahlen: '#2E5E4E',
-};
-
 const dunkel: Farben = {
-  hintergrund: '#141412',
-  flaeche: '#1E1D1B',
-  flaecheGedaempft: '#282725',
-  rand: '#38352F',
-  text: '#F2F0EC',
-  textGedaempft: '#9C978E',
-  akzent: '#6FA48D',
-  akzentText: '#101210',
+  hintergrund: '#0D0D0D',
+  flaeche: '#1A1A1A',
+  flaecheGedaempft: '#242424',
+  rand: '#333333',
+  text: '#FFFFFF',
+  textGedaempft: '#999999',
+  akzent: '#C6FF00',
+  akzentText: '#0D0D0D',
+  signal: '#FF0080',
 
-  sofort: '#E08273',
-  hoch: '#DCA765',
-  mittel: '#9C978E',
-  niedrig: '#7C776F',
-  nichtZahlen: '#6FA48D',
+  sofort: '#FF0080',
+  hoch: '#FFA800',
+  mittel: '#999999',
+  niedrig: '#555555',
+  nichtZahlen: '#C6FF00',
 };
 
 export function useFarben(): Farben {
-  return useColorScheme() === 'dark' ? dunkel : hell;
+  return dunkel;
 }
 
+/** Achterraster aus den Design-Tokens. */
 export const abstand = {
   xs: 4,
   s: 8,
-  m: 12,
-  l: 16,
-  xl: 24,
-  xxl: 32,
+  m: 16,
+  l: 24,
+  xl: 32,
+  xxl: 48,
 } as const;
 
 export const radius = {
   s: 8,
-  m: 12,
+  m: 16,
   l: 16,
+  rund: 999,
 } as const;
 
+/**
+ * Schriftskala 1,25 aus den Tokens. Versalien und weite Laufweite nur für kurze
+ * Auszeichnungen — in Fließtext kosten sie Lesbarkeit, und hier steht Text, den
+ * man wirklich verstehen muss.
+ */
 export const schrift = {
-  titel: { fontSize: 28, fontWeight: '700' as const, letterSpacing: -0.5 },
-  ueberschrift: { fontSize: 20, fontWeight: '600' as const, letterSpacing: -0.3 },
-  betont: { fontSize: 16, fontWeight: '600' as const },
+  riesig: { fontSize: 40, fontWeight: '900' as const, letterSpacing: -1 },
+  titel: { fontSize: 32, fontWeight: '800' as const, letterSpacing: -0.8 },
+  ueberschrift: { fontSize: 20, fontWeight: '700' as const, letterSpacing: -0.3 },
+  betont: { fontSize: 16, fontWeight: '700' as const },
   standard: { fontSize: 16, fontWeight: '400' as const },
   klein: { fontSize: 14, fontWeight: '400' as const },
-  winzig: { fontSize: 12, fontWeight: '500' as const, letterSpacing: 0.3 },
+  winzig: { fontSize: 11, fontWeight: '700' as const, letterSpacing: 1.2 },
 } as const;

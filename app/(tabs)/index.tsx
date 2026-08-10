@@ -23,24 +23,46 @@ function dringlichkeitsFarbe(d: Dringlichkeit, farben: Farben): string {
   }
 }
 
-function Kopf({ gesamtOffen, gesamtNebenkosten, anzahl }: {
+function Kennzahl({ wert, beschriftung, farbe }: { wert: string; beschriftung: string; farbe: string }) {
+  const farben = useFarben();
+  return (
+    <View style={[stil.kennzahl, { backgroundColor: farben.flaeche, borderColor: farben.rand }]}>
+      <Text style={[schrift.ueberschrift, { color: farbe }]}>{wert}</Text>
+      <Text style={[schrift.winzig, { color: farben.textGedaempft, marginTop: 2 }]}>
+        {beschriftung}
+      </Text>
+    </View>
+  );
+}
+
+function Kopf({ gesamtOffen, gesamtNebenkosten, anzahl, dringend, verjaehrt }: {
   gesamtOffen: number;
   gesamtNebenkosten: number;
   anzahl: number;
+  dringend: number;
+  verjaehrt: number;
 }) {
   const farben = useFarben();
   return (
-    <View style={[stil.kopf, { backgroundColor: farben.flaeche, borderColor: farben.rand }]}>
-      <Text style={[schrift.winzig, { color: farben.textGedaempft, textTransform: 'uppercase' }]}>
-        Offen insgesamt
-      </Text>
-      <Text style={[schrift.titel, { color: farben.text, marginTop: abstand.xs }]}>
-        {formatEuro(gesamtOffen)}
-      </Text>
-      <Text style={[schrift.klein, { color: farben.textGedaempft, marginTop: abstand.s }]}>
-        {anzahl === 1 ? '1 Forderung' : `${anzahl} Forderungen`}
-        {gesamtNebenkosten > 0 && `, davon ${formatEuro(gesamtNebenkosten)} Zinsen und Kosten`}
-      </Text>
+    <View style={{ gap: abstand.s }}>
+      <View style={[stil.kopf, { backgroundColor: farben.flaeche, borderColor: farben.rand }]}>
+        <Text style={[schrift.winzig, { color: farben.akzent }]}>OFFEN INSGESAMT</Text>
+        <Text style={[schrift.titel, { color: farben.text, marginTop: abstand.s }]}>
+          {formatEuro(gesamtOffen)}
+        </Text>
+        {gesamtNebenkosten > 0 && (
+          <Text style={[schrift.klein, { color: farben.textGedaempft, marginTop: abstand.s }]}>
+            Davon {formatEuro(gesamtNebenkosten)} Zinsen und aufgeschlagene Kosten — genau der Teil,
+            über den sich verhandeln lässt.
+          </Text>
+        )}
+      </View>
+
+      <View style={stil.kennzahlen}>
+        <Kennzahl wert={String(anzahl)} beschriftung="FORDERUNGEN" farbe={farben.text} />
+        <Kennzahl wert={String(dringend)} beschriftung="SOFORT" farbe={farben.sofort} />
+        <Kennzahl wert={String(verjaehrt)} beschriftung="VERJÄHRT" farbe={farben.akzent} />
+      </View>
     </View>
   );
 }
@@ -114,17 +136,20 @@ function Leer() {
   const farben = useFarben();
   return (
     <View style={stil.leer}>
-      <Text style={[schrift.ueberschrift, { color: farben.text, textAlign: 'center' }]}>
-        Noch nichts erfasst
+      <Text style={[schrift.titel, { color: farben.text, textAlign: 'center' }]}>
+        Noch nichts{'\n'}erfasst
       </Text>
+      <View style={[stil.leerStreifen, { backgroundColor: farben.akzent }]}>
+        <Text style={[schrift.betont, { color: farben.akzentText }]}>Fang mit dem schlimmsten an</Text>
+      </View>
       <Text
         style={[
           schrift.standard,
           { color: farben.textGedaempft, textAlign: 'center', marginTop: abstand.m, lineHeight: 24 },
         ]}
       >
-        Fang mit dem Brief an, vor dem dir am meisten graut. Sobald er erfasst ist, siehst du
-        schwarz auf weiß, worum es geht — das ist fast immer weniger schlimm als der Stapel.
+        Nimm den Brief, vor dem dir am meisten graut. Sobald er erfasst ist, siehst du schwarz auf
+        weiß, worum es geht — das ist fast immer weniger schlimm als der Stapel.
       </Text>
     </View>
   );
@@ -147,6 +172,8 @@ export default function Uebersicht() {
           gesamtOffen={gesamtOffen}
           gesamtNebenkosten={gesamtNebenkosten}
           anzahl={eintraege.length}
+          dringend={eintraege.filter((e) => e.prioritaet.dringlichkeit === 'sofort').length}
+          verjaehrt={eintraege.filter((e) => e.prioritaet.dringlichkeit === 'nicht_zahlen').length}
         />
       }
       renderItem={({ item }) => <Zeile eintrag={item} />}
@@ -155,8 +182,15 @@ export default function Uebersicht() {
 }
 
 const stil = StyleSheet.create({
-  liste: { padding: abstand.l, gap: abstand.m },
-  kopf: { padding: abstand.l, borderRadius: radius.l, borderWidth: StyleSheet.hairlineWidth },
+  liste: { padding: abstand.m, gap: abstand.s },
+  kopf: { padding: abstand.m, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth },
+  kennzahlen: { flexDirection: 'row', gap: abstand.s },
+  kennzahl: {
+    flex: 1,
+    padding: abstand.m,
+    borderRadius: radius.m,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
   zeile: {
     flexDirection: 'row',
     borderRadius: radius.m,
@@ -171,5 +205,11 @@ const stil = StyleSheet.create({
     paddingTop: abstand.s,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
-  leer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: abstand.xl },
+  leer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: abstand.l },
+  leerStreifen: {
+    marginTop: abstand.m,
+    paddingHorizontal: abstand.m,
+    paddingVertical: abstand.s,
+    borderRadius: radius.s,
+  },
 });
