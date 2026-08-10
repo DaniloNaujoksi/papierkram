@@ -3,10 +3,16 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import * as SplashScreen from 'expo-splash-screen';
 import { router, Stack } from 'expo-router';
 import { holeDb, leseEinstellung } from '../src/db/repo';
 import { SCHLUESSEL_ONBOARDING } from './willkommen';
 import { abstand, schrift, useFarben } from '../src/ui/theme';
+
+// Ohne das blendet expo-router den Startbildschirm aus, sobald der erste Screen
+// rendert — also bevor die Datenbank offen ist. Dann sieht man das gestaltete Bild
+// nur aufblitzen und danach einen Ladekreis.
+void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const farben = useFarben();
@@ -24,6 +30,11 @@ export default function RootLayout() {
       })
       .catch((e: unknown) => setFehler(e instanceof Error ? e.message : String(e)));
   }, []);
+
+  // Der Startbildschirm bleibt stehen, bis wirklich etwas anzuzeigen ist.
+  useEffect(() => {
+    if (bereit || fehler) void SplashScreen.hideAsync();
+  }, [bereit, fehler]);
 
   // Erst wenn der Navigator steht, darf umgeleitet werden.
   useEffect(() => {
