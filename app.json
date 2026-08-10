@@ -32,7 +32,16 @@
     "plugins": [
       "expo-router",
       "expo-sqlite",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "16.0"
+          }
+        }
+      ],
+      "./plugins/withMlKitNurLatein"
     ],
     "experiments": {
       "typedRoutes": true
