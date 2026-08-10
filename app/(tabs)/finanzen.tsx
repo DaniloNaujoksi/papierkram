@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { formatEuro, parseEuroZuCent } from '../../src/domain/betraege';
 import { berechneStrategie, type Lage, type Strategieergebnis } from '../../src/domain/strategie';
 import type { Haushaltszahlen } from '../../src/domain/strategie';
@@ -206,6 +206,27 @@ export default function FinanzenScreen() {
         onPress={() => void sichern()}
         style={{ marginTop: abstand.s }}
       />
+
+      {/* Die Lage oben rechnet nur mit Zahlen. Der Schritt darüber — welche Briefe
+          zusammengehören, was sich wiederholt, was übersehen wurde — braucht die
+          Texte selbst und liegt deshalb auf einem eigenen Schirm. */}
+      <View style={[stil.hinweiskarte, { backgroundColor: farben.flaeche, borderColor: farben.akzent, marginTop: abstand.m }]}>
+        <Text style={[schrift.winzig, { color: farben.akzent }]}>ALLES AUF EINMAL</Text>
+        <Text style={[schrift.betont, { color: farben.text, marginTop: abstand.s }]}>
+          Tiefenanalyse über alle Vorgänge
+        </Text>
+        <Text style={[schrift.klein, { color: farben.textGedaempft, marginTop: abstand.s, lineHeight: 21 }]}>
+          Schickt alle erfassten Schreiben zusammen zur Auswertung — anonymisiert wie beim Scannen.
+          Sucht Zusammenhänge zwischen den Briefen, Muster und Übersehenes, und schlägt eine
+          Reihenfolge für die nächsten zwei Wochen vor.
+        </Text>
+        <Knopf
+          titel="Tiefenanalyse öffnen"
+          art="tertiaer"
+          onPress={() => router.push('/analyse')}
+          style={{ marginTop: abstand.m }}
+        />
+      </View>
 
       <Text style={[schrift.klein, { color: farben.niedrig, lineHeight: 20, marginTop: abstand.s }]}>
         Diese Rechnung ersetzt keine Beratung. Sie zeigt dir, welche Frage du dort stellen musst —

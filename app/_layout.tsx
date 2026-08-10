@@ -14,6 +14,14 @@ import { abstand, schrift, useFarben } from '../src/ui/theme';
 // nur aufblitzen und danach einen Ladekreis.
 void SplashScreen.preventAutoHideAsync();
 
+/**
+ * Der Startbildschirm bleibt mindestens so lange stehen. Ohne das wäre er auf einem
+ * schnellen Gerät nach einer halben Sekunde wieder weg — zu kurz, um ihn zu lesen,
+ * und es wirkt wie ein Flackern statt wie ein Anfang.
+ */
+const MINDESTDAUER_MS = 2000;
+const GESTARTET_UM = Date.now();
+
 export default function RootLayout() {
   const farben = useFarben();
   const [bereit, setBereit] = useState(false);
@@ -31,9 +39,13 @@ export default function RootLayout() {
       .catch((e: unknown) => setFehler(e instanceof Error ? e.message : String(e)));
   }, []);
 
-  // Der Startbildschirm bleibt stehen, bis wirklich etwas anzuzeigen ist.
+  // Der Startbildschirm bleibt stehen, bis wirklich etwas anzuzeigen ist — und dann
+  // noch, bis die Mindestdauer erreicht ist.
   useEffect(() => {
-    if (bereit || fehler) void SplashScreen.hideAsync();
+    if (!bereit && !fehler) return;
+    const rest = Math.max(0, MINDESTDAUER_MS - (Date.now() - GESTARTET_UM));
+    const zeitgeber = setTimeout(() => void SplashScreen.hideAsync(), rest);
+    return () => clearTimeout(zeitgeber);
   }, [bereit, fehler]);
 
   // Erst wenn der Navigator steht, darf umgeleitet werden.
@@ -75,6 +87,7 @@ export default function RootLayout() {
         >
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="willkommen" options={{ headerShown: false }} />
+          <Stack.Screen name="analyse" options={{ title: 'Tiefenanalyse' }} />
           <Stack.Screen name="pruefen" options={{ title: 'Prüfen und übernehmen', presentation: 'modal' }} />
           <Stack.Screen name="forderung/[id]" options={{ title: 'Forderung' }} />
         </Stack>

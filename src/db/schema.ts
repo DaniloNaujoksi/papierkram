@@ -1,7 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 export const DATENBANK_NAME = 'papierkram.db';
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 
 /**
  * Migrationen laufen beim Start. Jede Version ist ein eigener Block, damit eine
@@ -93,6 +93,23 @@ export async function migriere(db: SQLiteDatabase): Promise<void> {
       );
     `);
     version = 1;
+  }
+
+  if (version === 1) {
+    // Tiefenanalysen werden aufbewahrt, nicht nur angezeigt: Man liest sie
+    // mehrfach, nimmt sie zum Beratungstermin mit, und beim nächsten Lauf ist
+    // der Vergleich mit der vorigen Einschätzung selbst eine Information.
+    await db.execAsync(`
+      CREATE TABLE analyse (
+        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+        erstellt_am     TEXT    NOT NULL,
+        text            TEXT    NOT NULL,
+        gesendeter_text TEXT    NOT NULL,
+        anzahl_belege   INTEGER NOT NULL DEFAULT 0,
+        summe_offen     INTEGER NOT NULL DEFAULT 0
+      );
+    `);
+    version = 2;
   }
 
   await db.execAsync(`PRAGMA user_version = ${SCHEMA_VERSION}`);

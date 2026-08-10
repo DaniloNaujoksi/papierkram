@@ -310,6 +310,72 @@ export async function zahlungssummeJeForderung(): Promise<Map<number, number>> {
   return new Map(zeilen.map((z) => [z.forderung_id, z.gezahlt]));
 }
 
+// --- Tiefenanalysen ---
+
+export interface Analyse {
+  id: number;
+  erstelltAm: string;
+  text: string;
+  gesendeterText: string;
+  anzahlBelege: number;
+  summeOffen: number;
+}
+
+export async function speichereAnalyse(a: Omit<Analyse, 'id' | 'erstelltAm'>): Promise<number> {
+  const db = await holeDb();
+  const ergebnis = await db.runAsync(
+    'INSERT INTO analyse (erstellt_am, text, gesendeter_text, anzahl_belege, summe_offen) VALUES (?, ?, ?, ?, ?)',
+    new Date().toISOString(),
+    a.text,
+    a.gesendeterText,
+    a.anzahlBelege,
+    a.summeOffen
+  );
+  return ergebnis.lastInsertRowId;
+}
+
+export async function letzteAnalyse(): Promise<Analyse | null> {
+  const db = await holeDb();
+  const z = await db.getFirstAsync<{
+    id: number;
+    erstellt_am: string;
+    text: string;
+    gesendeter_text: string;
+    anzahl_belege: number;
+    summe_offen: number;
+  }>('SELECT * FROM analyse ORDER BY erstellt_am DESC LIMIT 1');
+  if (!z) return null;
+  return {
+    id: z.id,
+    erstelltAm: z.erstellt_am,
+    text: z.text,
+    gesendeterText: z.gesendeter_text,
+    anzahlBelege: z.anzahl_belege,
+    summeOffen: z.summe_offen,
+  };
+}
+
+/** Alle bereits anonymisierten Brieftexte, die einer Forderung zugeordnet sind. */
+export async function alleGesendetenTexte(): Promise<
+  Array<{ forderungId: number | null; typ: string; briefdatum: string | null; text: string }>
+> {
+  const db = await holeDb();
+  const zeilen = await db.getAllAsync<{
+    forderung_id: number | null;
+    typ: string;
+    briefdatum: string | null;
+    gesendeter_text: string | null;
+  }>(
+    'SELECT forderung_id, typ, briefdatum, gesendeter_text FROM dokument WHERE gesendeter_text IS NOT NULL ORDER BY briefdatum, erfasst_am'
+  );
+  return zeilen.map((z) => ({
+    forderungId: z.forderung_id,
+    typ: z.typ,
+    briefdatum: z.briefdatum,
+    text: z.gesendeter_text ?? '',
+  }));
+}
+
 // --- Einstellungen ---
 
 export async function leseEinstellung(schluessel: string): Promise<string | null> {
