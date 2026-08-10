@@ -1,0 +1,91 @@
+name: iOS Build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      # Der native iOS-Ordner liegt nicht im Repo, sondern wird bei jedem Build aus
+      # app.json erzeugt. So bleibt die Konfiguration an einer Stelle. --no-install,
+      # weil npm ci die Pakete schon in der exakten Version installiert hat.
+      - name: Natives Projekt erzeugen
+        run: npx expo prebuild --platform ios --clean --no-install
+
+      # Workspace- und Schema-Name leiten sich aus dem App-Namen ab. Statt ihn hier
+      # zu wiederholen, wird er ausgelesen — sonst bricht der Build still, sobald
+      # jemand die App umbenennt.
+      - name: Namen ermitteln
+        id: namen
+        working-directory: ios
+        run: |
+          workspace=$(ls -d *.xcworkspace | head -n1)
+          scheme="${workspace%.xcworkspace}"
+          echo "workspace=$workspace" >> "$GITHUB_OUTPUT"
+          echo "scheme=$scheme" >> "$GITHUB_OUTPUT"
+          echo "Workspace: $workspace, Schema: $scheme"
+
+      - name: CocoaPods installieren
+        working-directory: ios
+        run: pod install --repo-update
+
+      # Ohne Signatur bauen: Die IPA wird per Sideloading aufs iPhone gebracht,
+      # ein Apple-Entwicklerkonto ist dafür nicht nötig.
+      - name: Archiv bauen
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -workspace "${{ steps.namen.outputs.workspace }}" \
+            -scheme "${{ steps.namen.outputs.scheme }}" \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$PWD/build/app.xcarchive" \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            ENABLE_BITCODE=NO \
+            archive
+
+      - name: IPA packen
+        working-directory: ios
+        run: |
+          app=$(ls -d build/app.xcarchive/Products/Applications/*.app | head -n1)
+          mkdir -p build/Payload
+          cp -R "$app" build/Payload/
+          cd build
+          zip -qry Papierkram-unsigned.ipa Payload
+          ls -lh Papierkram-unsigned.ipa
+
+      # Bei rotem Build ist das Log aus xcodebuild die einzige brauchbare Spur.
+      - name: Fehlerprotokolle sichern
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: |
+            /Users/runner/Library/Logs/gym
+            ios/Podfile.lock
+          if-no-files-found: ignore
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: papierkram-ipa
+          path: ios/build/Papierkram-unsigned.ipa
+          retention-days: 30
