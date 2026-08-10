@@ -6,7 +6,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.naujocks.papierkram",
@@ -41,7 +41,19 @@
           }
         }
       ],
-      "./plugins/withMlKitNurLatein"
+      "./plugins/withMlKitNurLatein",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "resizeMode": "cover",
+          "backgroundColor": "#0D0D0D",
+          "dark": {
+            "image": "./assets/splash.png",
+            "backgroundColor": "#0D0D0D"
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
