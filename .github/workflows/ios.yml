@@ -7,11 +7,23 @@ on:
 
 jobs:
   build:
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 90
 
     steps:
       - uses: actions/checkout@v4
+
+      # Expo SDK 57 bringt SwiftPM-Pakete mit, die Swift-Tools 6.2 verlangen. Das
+      # Standard-Xcode des Runners kann älter sein, deshalb wird die neueste
+      # installierte Version gewählt statt eine feste Nummer einzutragen.
+      - name: Neueste Xcode-Version wählen
+        run: |
+          echo "Installierte Xcode-Versionen:"
+          ls -d /Applications/Xcode*.app
+          neueste=$(ls -d /Applications/Xcode*.app | sort -V | tail -n1)
+          sudo xcode-select -s "$neueste/Contents/Developer"
+          xcodebuild -version
+          swift --version
 
       - uses: actions/setup-node@v4
         with:
