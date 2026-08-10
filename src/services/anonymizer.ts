@@ -137,12 +137,27 @@ export function anonymisiere(rohtext: string, daten: PersoenlicheDaten): Anonymi
   {
     let n = 0;
     if (daten.strasse.trim()) {
-      // Auch "Musterstr." wenn "Musterstraße" hinterlegt ist, und umgekehrt.
-      const stamm = daten.strasse.trim().replace(/(stra(ß|ss)e|str\.?)\s*/i, '');
-      const muster = new RegExp(`${escapeRegex(stamm)}\\s*(?:stra(?:ß|ss)e|str\\.?)?\\s*\\d+\\s*[a-zA-Z]?`, 'gi');
-      const r = ersetze(text, muster, '[STRASSE]');
-      text = r.text;
-      n += r.anzahl;
+      // Das Eingabefeld heißt "Straße und Hausnummer", enthält also meist beides.
+      // Für die Suche zählt nur das Grundwort: aus "Musterstraße 12" wird "Muster",
+      // damit im Brief auch "Musterstr. 12", "Musterstrasse 12" oder eine andere
+      // Hausnummer erkannt wird. Endung und Nummer sind im Muster optional — lieber
+      // einmal zu viel entfernen als die Anschrift durchrutschen lassen.
+      const ohneHausnummer = daten.strasse.trim().replace(/\s*\d+\s*[a-zA-Z]?\s*$/, '').trim();
+      const stamm = ohneHausnummer.replace(/\s*(stra(ß|ss)e|str\.?)\s*$/i, '').trim();
+
+      if (stamm.length >= 3) {
+        const muster = new RegExp(
+          `\\b${escapeRegex(stamm)}(?:\\s*(?:stra(?:ß|ss)e|str\\.?))?(?:\\s*\\d+\\s*[a-zA-Z]?)?`,
+          'gi'
+        );
+        const r = ersetze(text, muster, '[STRASSE]');
+        text = r.text;
+        n += r.anzahl;
+      } else {
+        warnungen.push(
+          'Der Straßenname ist zu kurz, um ihn zuverlässig zu erkennen. Prüfe den Text unten von Hand auf deine Anschrift.'
+        );
+      }
     }
     if (daten.plz.trim() && daten.ort.trim()) {
       const muster = new RegExp(`${escapeRegex(daten.plz.trim())}\\s+${escapeRegex(daten.ort.trim())}`, 'gi');

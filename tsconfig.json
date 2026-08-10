@@ -1,7 +1,11 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "strict": true
+    "strict": true,
+    // Die Tests laufen direkt über `node --test` ohne Bündelung. Node verlangt
+    // dort die vollständige Dateiendung im Import; ohne diese Option beanstandet
+    // TypeScript genau das.
+    "allowImportingTsExtensions": true
   },
   "include": [
     "**/*.ts",
