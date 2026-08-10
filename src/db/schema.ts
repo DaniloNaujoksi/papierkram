@@ -1,7 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 export const DATENBANK_NAME = 'papierkram.db';
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 
 /**
  * Migrationen laufen beim Start. Jede Version ist ein eigener Block, damit eine
@@ -110,6 +110,26 @@ export async function migriere(db: SQLiteDatabase): Promise<void> {
       );
     `);
     version = 2;
+  }
+
+  if (version === 2) {
+    // Ausgehende Schreiben werden mitgefuehrt, nicht nur erzeugt. In jedem spaeteren
+    // Streit ist die Frage, wann was an wen ging — und ohne diese Spur steht Aussage
+    // gegen Aussage.
+    await db.execAsync(`
+      CREATE TABLE schreiben (
+        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+        forderung_id  INTEGER NOT NULL REFERENCES forderung(id) ON DELETE CASCADE,
+        absicht       TEXT    NOT NULL,
+        text          TEXT    NOT NULL,
+        erstellt_am   TEXT    NOT NULL,
+        versendet_am  TEXT,
+        versandart    TEXT
+      );
+
+      CREATE INDEX idx_schreiben_forderung ON schreiben(forderung_id);
+    `);
+    version = 3;
   }
 
   await db.execAsync(`PRAGMA user_version = ${SCHEMA_VERSION}`);

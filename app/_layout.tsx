@@ -88,6 +88,7 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="willkommen" options={{ headerShown: false }} />
           <Stack.Screen name="analyse" options={{ title: 'Tiefenanalyse' }} />
+          <Stack.Screen name="antwort" options={{ title: 'Antwort schreiben' }} />
           <Stack.Screen name="pruefen" options={{ title: 'Prüfen und übernehmen', presentation: 'modal' }} />
           <Stack.Screen name="forderung/[id]" options={{ title: 'Forderung' }} />
         </Stack>

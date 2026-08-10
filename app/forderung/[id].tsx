@@ -121,6 +121,13 @@ export default function ForderungDetail() {
 
       {/* Die automatische Auswertung liest nicht aus jedem Brief alles heraus.
           Ohne diesen Weg bliebe eine unvollständige Forderung für immer falsch. */}
+      {/* Der naechste Schritt oben sagt, was zu tun ist. Hier faengt das Tun an. */}
+      <Knopf
+        titel="Antwort schreiben"
+        onPress={() =>
+          router.push({ pathname: '/antwort', params: { forderungId: String(forderung.id) } })
+        }
+      />
       <Knopf
         titel="Angaben bearbeiten"
         art="tertiaer"

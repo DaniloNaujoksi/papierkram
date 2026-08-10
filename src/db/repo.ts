@@ -376,6 +376,67 @@ export async function alleGesendetenTexte(): Promise<
   }));
 }
 
+// --- Ausgehende Schreiben ---
+
+export interface Schreiben {
+  id: number;
+  forderungId: number;
+  absicht: string;
+  text: string;
+  erstelltAm: string;
+  versendetAm: string | null;
+  versandart: string | null;
+}
+
+export async function speichereSchreiben(s: {
+  forderungId: number;
+  absicht: string;
+  text: string;
+}): Promise<number> {
+  const db = await holeDb();
+  const e = await db.runAsync(
+    'INSERT INTO schreiben (forderung_id, absicht, text, erstellt_am) VALUES (?, ?, ?, ?)',
+    s.forderungId,
+    s.absicht,
+    s.text,
+    new Date().toISOString()
+  );
+  return e.lastInsertRowId;
+}
+
+/** Hält fest, wann und wie ein Schreiben rausgegangen ist. Zählt im Streitfall. */
+export async function vermerkeVersand(id: number, versandart: string): Promise<void> {
+  const db = await holeDb();
+  await db.runAsync(
+    'UPDATE schreiben SET versendet_am = ?, versandart = ? WHERE id = ?',
+    new Date().toISOString(),
+    versandart,
+    id
+  );
+}
+
+export async function schreibenZuForderung(forderungId: number): Promise<Schreiben[]> {
+  const db = await holeDb();
+  const zeilen = await db.getAllAsync<{
+    id: number;
+    forderung_id: number;
+    absicht: string;
+    text: string;
+    erstellt_am: string;
+    versendet_am: string | null;
+    versandart: string | null;
+  }>('SELECT * FROM schreiben WHERE forderung_id = ? ORDER BY erstellt_am DESC', forderungId);
+  return zeilen.map((z) => ({
+    id: z.id,
+    forderungId: z.forderung_id,
+    absicht: z.absicht,
+    text: z.text,
+    erstelltAm: z.erstellt_am,
+    versendetAm: z.versendet_am,
+    versandart: z.versandart,
+  }));
+}
+
 // --- Einstellungen ---
 
 export async function leseEinstellung(schluessel: string): Promise<string | null> {
