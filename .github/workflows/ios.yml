@@ -27,22 +27,29 @@ jobs:
       - name: Natives Projekt erzeugen
         run: npx expo prebuild --platform ios --clean --no-install
 
-      # Workspace- und Schema-Name leiten sich aus dem App-Namen ab. Statt ihn hier
-      # zu wiederholen, wird er ausgelesen — sonst bricht der Build still, sobald
-      # jemand die App umbenennt.
+      - name: CocoaPods installieren
+        working-directory: ios
+        run: pod install --repo-update
+
+      # Erst nach `pod install` — die .xcworkspace-Datei wird von CocoaPods erzeugt,
+      # nicht von prebuild. Der Name leitet sich aus dem App-Namen ab; statt ihn hier
+      # zu wiederholen, wird er ausgelesen, damit ein Umbenennen den Build nicht
+      # still bricht. Leeres Ergebnis bricht sofort ab, sonst ruft der nächste
+      # Schritt xcodebuild mit leeren Argumenten auf.
       - name: Namen ermitteln
         id: namen
         working-directory: ios
         run: |
-          workspace=$(ls -d *.xcworkspace | head -n1)
+          workspace=$(ls -d *.xcworkspace 2>/dev/null | head -n1)
+          if [ -z "$workspace" ]; then
+            echo "Keine .xcworkspace gefunden. Inhalt von ios/:"
+            ls -la
+            exit 1
+          fi
           scheme="${workspace%.xcworkspace}"
           echo "workspace=$workspace" >> "$GITHUB_OUTPUT"
           echo "scheme=$scheme" >> "$GITHUB_OUTPUT"
           echo "Workspace: $workspace, Schema: $scheme"
-
-      - name: CocoaPods installieren
-        working-directory: ios
-        run: pod install --repo-update
 
       # Ohne Signatur bauen: Die IPA wird per Sideloading aufs iPhone gebracht,
       # ein Apple-Entwicklerkonto ist dafür nicht nötig.
