@@ -131,7 +131,10 @@ export default function PruefenScreen() {
       });
 
       await verknuepfeDokument(Number(dokumentId), forderungId);
-      router.back();
+
+      // Zurück in die Übersicht statt in den Scan-Tab: Wer gerade eine Forderung
+      // erfasst hat, will sehen, wo sie einsortiert wurde und was jetzt zu tun ist.
+      router.replace('/');
     } catch (e) {
       setFehler(e instanceof Error ? e.message : String(e));
     } finally {

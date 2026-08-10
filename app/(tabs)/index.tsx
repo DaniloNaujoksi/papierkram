@@ -89,6 +89,21 @@ function Zeile({ eintrag }: { eintrag: Eintrag }) {
               Vermutlich verjährt seit {verjaehrung.verjaehrtAm}
             </Text>
           )}
+
+          {/* Die Handlungsanweisung ist der eigentliche Zweck der App und gehört
+              deshalb in die Liste, nicht erst in die Detailansicht. Hier steht der
+              erste Satz; der Rest samt Begründung und Risiko folgt beim Antippen. */}
+          <View style={[stil.schritt, { borderTopColor: farben.rand }]}>
+            <Text style={[schrift.winzig, { color: farben.textGedaempft, textTransform: 'uppercase' }]}>
+              Nächster Schritt
+            </Text>
+            <Text
+              style={[schrift.klein, { color: farben.text, marginTop: 2, lineHeight: 20 }]}
+              numberOfLines={3}
+            >
+              {prioritaet.naechsterSchritt}
+            </Text>
+          </View>
         </View>
       </Pressable>
     </Link>
@@ -151,5 +166,10 @@ const stil = StyleSheet.create({
   balken: { width: 4 },
   zeileInhalt: { flex: 1, padding: abstand.m },
   zeileKopf: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  schritt: {
+    marginTop: abstand.m,
+    paddingTop: abstand.s,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
   leer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: abstand.xl },
 });
