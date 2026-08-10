@@ -12,7 +12,7 @@
  */
 
 import type { Cent } from './types';
-import { formatEuro } from './betraege';
+import { formatEuro } from './betraege.ts';
 
 /**
  * Gebührentabelle nach § 13 Abs. 1 RVG (Fassung seit dem KostRÄG 2021).

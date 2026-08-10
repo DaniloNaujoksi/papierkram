@@ -17,7 +17,7 @@
 
 import type { Dokumenttyp, Forderung, Forderungstyp } from './types';
 import type { Verjaehrungsergebnis } from './verjaehrung';
-import { summe } from './betraege';
+import { summe } from './betraege.ts';
 
 export type Dringlichkeit = 'sofort' | 'hoch' | 'mittel' | 'niedrig' | 'nicht_zahlen';
 
